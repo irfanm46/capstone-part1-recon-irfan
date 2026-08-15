@@ -1,0 +1,14 @@
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2026-08-15 10:15 IST
+Nmap scan report for 192.168.56.10
+Host is up (0.00015s latency).
+MAC Address: 08:00:27:1A:3B:4C (Oracle VirtualBox)
+
+Nmap scan report for ns1.lab.local (192.168.56.20)
+Host is up (0.00032s latency).
+MAC Address: 08:00:27:4D:5E:6F (Oracle VirtualBox)
+
+Nmap scan report for vuln-target01.lab.local (192.168.56.30)
+Host is up (0.00028s latency).
+MAC Address: 08:00:27:7A:8B:9C (Oracle VirtualBox)
+
+Nmap done: 256 IP addresses (3 hosts up) scanned in 2.14 seconds
