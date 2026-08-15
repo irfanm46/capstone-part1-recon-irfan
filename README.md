@@ -1,125 +1,127 @@
 # Penetration Testing & Vulnerability Assessment Report
-**Engagement Standard:** Penetration Testing Execution Standard (PTES)  
-**Target Scope:** `192.168.56.0/24` (Authorized Lab Network)  
-**Author:** Irfan Musthafa  
-**Engagement Type:** Infrastructure Reconnaissance & Vulnerability Assessment  
+
+**Engagement Standard:** PTES (Penetration Testing Execution Standard)  
+**Target Scope:** `192.168.56.0/24`  
+**Assessor:** Irfan Musthafa  
 
 ---
 
-## Lab Architecture & Environment Setup
+## Lab Architecture
 
-| Hostname | Assigned IP | Role / Operating System | Details |
+| Hostname | IP Address | OS / Role | Notes |
 | :--- | :--- | :--- | :--- |
-| `kali-sec-node` | `192.168.56.10` | Kali Linux 2024.x | Security assessment scanning workstation |
-| `ns1.lab.local` | `192.168.56.20` | Ubuntu Server 22.04 (BIND9) | Authoritative DNS server for `lab.local` |
-| `vuln-target01` | `192.168.56.30` | Metasploitable 2 (Linux 2.6.x) | Intentionally vulnerable multi-service target |
+| `kali-sec-node` | `192.168.56.10` | Kali Linux 2024.x | Assessment Workstation |
+| `ns1.lab.local` | `192.168.56.20` | Ubuntu Server (BIND9) | Authoritative DNS Server |
+| `vuln-target01` | `192.168.56.30` | Metasploitable 2 (Linux 2.6.x) | Vulnerable Target Host |
 
 ---
 
 ## 1. Executive Summary
-A comprehensive, non-intrusive network reconnaissance and automated vulnerability assessment was conducted against the authorized laboratory scope `192.168.56.0/24`. The assessment identified severe configuration and software weaknesses, most notably unauthenticated remote code execution vulnerabilities in legacy background daemons and unrestricted DNS zone transfer permissions. Remediation requires immediate retirement of legacy services, implementation of firewall perimeter rules, and enforcement of least-privilege service configurations.
+A non-intrusive network vulnerability assessment was conducted on `192.168.56.0/24`. Critical vulnerabilities were identified, including unauthenticated remote code execution backdoors and unrestricted DNS zone transfers. Immediate remediation focuses on patching legacy services and enforcing access control lists.
 
 ---
 
-## 2. Scope & Rules of Engagement (RoE)
+## 2. Scope & Rules of Engagement
 
-### A. Target Scope
-* **Target Network:** `192.168.56.0/24` (Subnet: `255.255.255.0`)
-* **Explicit Exclusions:** Network gateway (`192.168.56.1`), broadcast addresses, host OS interfaces, and all external production systems.
-
-### B. In-Scope Activities
-* Passive OSINT reconnaissance (demonstrated on non-target public assets)
-* Active ICMP/ARP host discovery and network mapping
-* TCP SYN half-open port scanning (ports 1–1024)
-* Service banner grabbing and version detection (`-sV`)
-* Operating system fingerprinting (`-O`)
-* Local authoritative DNS enumeration and AXFR zone transfer validation
-* Automated vulnerability scanning using Nessus/OpenVAS
-
-### C. Out-of-Scope Activities
-* Exploitation, payload delivery, or remote code execution attempts
-* Post-exploitation, privilege escalation, or lateral movement
-* Denial of Service (DoS / DDoS) testing or buffer stress testing
-* Social engineering, phishing, or physical security assessments
-
-### D. Rules of Engagement & Operational Controls
-* **Authorized Testing Window:** 09:00 – 18:00 IST (Monday through Friday).
-* **Network Rate Limiting:** All active scanning throttled to a maximum rate of 300 packets per second (`--max-rate 300`) to avoid network disruption.
-* **Emergency Point of Contact:** `security-ops@campus.internal` / Lead Security Administrator.
-* **Incident Protocol:** If any service becomes unstable or unresponsive, scanning stops immediately and timestamps are recorded for review.
+* **Target Range:** `192.168.56.0/24` (Subnet mask `255.255.255.0`).
+* **In-Scope:** Passive OSINT, ICMP/ARP host discovery, TCP SYN scanning (ports 1–1024), service/OS detection, DNS enumeration, and automated vulnerability scanning.
+* **Out-of-Scope:** Active exploitation, payload execution, DoS/DDoS, social engineering, and out-of-subnet IP addresses.
+* **Operational Rules:** Testing hours 09:00–18:00 IST; rate limit capped at 300 pps (`--max-rate 300`); emergency point of contact: `security-ops@campus.internal`.
 
 ---
 
-## 3. Methodology (PTES Phase Mapping)
+## 3. Methodology (PTES Mapping)
 
-| PTES Phase | Technical Execution in This Engagement |
-| :--- | :--- |
-| **1. Pre-Engagement** | Defining boundaries, establishing Rules of Engagement, and configuring lab targets. |
-| **2. Intelligence Gathering** | Passive OSINT verification, public Shodan reconnaissance, and passive DNS mapping. |
-| **3. Threat Modeling & Discovery** | Nmap ARP/ICMP ping sweep (`-sn`), TCP SYN scan (`-sS`), and service fingerprinting (`-sV`). |
-| **4. Vulnerability Analysis** | Local DNS zone enumeration (`dig`, AXFR) and Nessus automated vulnerability scanning. |
-| **5. Reporting & Post-Assessment** | CVSS v3.1 calculation, textual risk heat mapping, and prioritized remediation roadmap. |
+* **Pre-Engagement:** Scope validation, target network verification, and Rules of Engagement agreement.
+* **Intelligence Gathering:** Passive DNS/Shodan queries, host discovery, and port enumeration.
+* **Vulnerability Analysis:** Service fingerprinting, DNS zone transfer audit, and automated Nessus scanning.
+* **Reporting:** Risk quantification using CVSS v3.1 and prioritized remediation planning.
 
 ---
 
-## 4. Technical Reconnaissance & Enumeration Findings
+## 4. Technical Reconnaissance & Enumeration
 
-### Task 2: Passive OSINT Demonstration
-Because private RFC 1918 address space (`192.168.56.0/24`) is not indexed on public discovery platforms, OSINT techniques were demonstrated against public infrastructure to validate methodology and risk classification.
+### Passive OSINT Demonstration
 
-| Query / Source | Discovered Information | Sensitivity Classification | Attacker Inference & Risk |
+| Target / Query | Data Identified | Risk Level | Attacker Inference |
 | :--- | :--- | :--- | :--- |
-| `dig example.com ANY` | `A`, `MX`, `NS`, `TXT` records | **Low Risk** | Reveals mail routing topology and hosting providers passively without contacting target hosts. |
-| `dig _dmarc.example.com TXT` | `v=DMARC1; p=none;` | **Medium Risk** | Indicates no email quarantine/rejection policy is enforced, allowing domain email spoofing. |
-| `shodan search "port:22 product:OpenSSH"` | Global banner distribution | **High Risk** | Enables mass filtering of unpatched OpenSSH versions susceptible to known CVEs. |
+| `dig example.com ANY` | `A`, `MX`, `NS`, `TXT` | **Low** | Maps perimeter routing and mail infrastructure. |
+| `dig _dmarc.example.com TXT` | `v=DMARC1; p=none;` | **Medium** | Lacks mail rejection policy; vulnerable to email spoofing. |
+| `shodan search "port:22 product:OpenSSH"` | OpenSSH 8.2p1 banners | **High** | Identifies unpatched server builds remotely. |
 
----
-
-### Task 3: Active Host Discovery (Ping Sweep)
+### Active Host Discovery
 * **Command:** `nmap -sn -PR 192.168.56.0/24 -oN outputs/02_nmap_ping_sweep.txt`
-  * `-sn`: Disables port scanning to purely identify live hosts quickly.
-  * `-PR`: Uses ARP requests on local Ethernet subnets, bypassing host-level software firewalls.
-  * `-oN`: Exports output to a human-readable text file for audit logging.
+  * `-sn`: Host discovery only (no port scan).
+  * `-PR`: Uses ARP requests for fast, firewall-resilient local discovery.
+  * `-oN`: Saves standard text output to file.
+* **Discovered Hosts:** `192.168.56.10` (Kali), `192.168.56.20` (DNS), `192.168.56.30` (Target).
+* **Rationale:** Performing discovery first prevents scanning inactive IPs, minimizing detection and network latency.
 
-* **Discovered Live Hosts:**
-  * `192.168.56.10` — Kali Security Workstation (`kali-sec-node`)
-  * `192.168.56.20` — DNS Name Server (`ns1.lab.local`)
-  * `192.168.56.30` — Vulnerable Application Target (`vuln-target01`)
-
-* **PTES Intelligence Gathering Rationale:** Performing host discovery prior to port scanning minimizes network noise, avoids triggering defensive IDS thresholds across empty IP space, and focuses port enumeration strictly on active targets.
-
----
-
-### Task 4: Port Scanning, Service Identification & OS Fingerprinting
-
-#### A. TCP SYN Scan vs. TCP Connect Scan (Packet-Level Comparison)
-* **Command Executed:** `nmap -sS -p 1-1024 192.168.56.30 -oN outputs/03_nmap_syn_ports.txt`
-* **Packet-Level Mechanism:**
-  * **TCP Connect Scan (`-sT`):** Completes the standard 3-way handshake (`SYN` $\rightarrow$ `SYN/ACK` $\rightarrow$ `ACK`). The operating system kernel establishes an active socket connection, triggering an application-level event log (e.g., in web or FTP access logs).
-  * **TCP SYN Scan (`-sS`):** Operates as a half-open scan. The scanner sends a `SYN` packet; when the target responds with `SYN/ACK`, the scanner immediately returns an `RST` (Reset) packet instead of completing the handshake with an `ACK`. The connection is torn down before the application layer records an established session, making it stealthier.
-
-#### B. Service & OS Enumeration Table (Target: `192.168.56.30`)
-* **OS Fingerprint:** Linux 2.6.9 - 2.6.33 (Kernel confidence: 96%)
+### Port Scanning & Service Enumeration
+* **Command:** `nmap -sS -sV -O -p 1-1024 192.168.56.30 -oN outputs/03_nmap_syn_ports.txt`
+* **SYN vs. Connect Scan:** A TCP Connect scan (`-sT`) completes the 3-way handshake (`SYN` $\rightarrow$ `SYN/ACK` $\rightarrow$ `ACK`), creating an established OS socket that triggers application logs. A TCP SYN scan (`-sS`) sends `RST` immediately upon receiving `SYN/ACK`, tearing down the connection before it can be logged by the application layer.
 
 | Host | Port | State | Service | Software Version | Operating System |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `192.168.56.30` | `21/tcp` | Open | FTP | vsftpd 2.3.4 | Linux 2.6.x |
-| `192.168.56.30` | `22/tcp` | Open | SSH | OpenSSH 4.7p1 Debian 8ubuntu1 | Linux 2.6.x |
-| `192.168.56.30` | `53/tcp` | Open | Domain | ISC BIND 9.4.2 | Linux 2.6.x |
-| `192.168.56.30` | `80/tcp` | Open | HTTP | Apache httpd 2.2.8 ((Ubuntu) DAV/2) | Linux 2.6.x |
-| `192.168.56.30` | `445/tcp` | Open | NetBIOS-SSN | Samba smbd 3.X - 4.X | Linux 2.6.x |
-| `192.168.56.30` | `3632/tcp`| Open | Distcc | distccd v1 (format V1 backend) | Linux 2.6.x |
+| `192.168.56.30` | `22/tcp` | Open | SSH | OpenSSH 4.7p1 | Linux 2.6.x |
+| `192.168.56.30` | `53/tcp` | Open | DNS | ISC BIND 9.4.2 | Linux 2.6.x |
+| `192.168.56.30` | `80/tcp` | Open | HTTP | Apache httpd 2.2.8 | Linux 2.6.x |
+| `192.168.56.30` | `445/tcp` | Open | SMB | Samba 3.X - 4.X | Linux 2.6.x |
+| `192.168.56.30` | `3632/tcp`| Open | Distcc | distccd v1 | Linux 2.6.x |
+
+### DNS Enumeration & Zone Transfer
+* **Record Query:** `dig @192.168.56.20 lab.local ANY +noall +answer`
+  * Successfully retrieved `A`, `NS`, `SOA`, `MX`, `TXT`, and `CNAME` records.
+* **Zone Transfer Test:** `dig axfr @192.168.56.20 lab.local`
+  * **Result:** **Success (AXFR Allowed).** Unrestricted zone transfers expose internal domain topology and unlinked hosts.
+* **Reverse Lookup:** `dig -x 192.168.56.30 @192.168.56.20 +short` $\rightarrow$ `vuln-target01.lab.local.`
 
 ---
 
-### Task 5: DNS Enumeration & Zone Transfer Security
+## 5. Vulnerability Assessment Findings
 
-#### A. Record Query Output
-* **Command:** `dig @192.168.56.20 lab.local ANY +noall +answer`
+| ID | Vulnerability | CVE / Ref | CVSS v3.1 | Severity | Asset & Port |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **V-01** | vsftpd 2.3.4 Backdoor RCE | `CVE-2011-2523` | **9.8** | 🔴 Critical | `192.168.56.30:21` |
+| **V-02** | Distcc Daemon Remote Command Execution | `CVE-2004-2687` | **9.8** | 🔴 Critical | `192.168.56.30:3632` |
+| **V-03** | Apache HTTP Slowloris Denial of Service | `CVE-2007-6750` | **7.5** | 🟠 High | `192.168.56.30:80` |
+| **V-04** | Unrestricted DNS Zone Transfer (AXFR) | CWE-200 | **5.3** | 🟡 Medium | `192.168.56.20:53` |
+
+### Technical Details & Remediation
+
+* **V-01 (vsftpd 2.3.4 RCE):** Vector `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`. Contains a hardcoded backdoor triggered on authentication.  
+  * *Fix:* Upgrade package to `vsftpd 3.0.5+` or replace with SFTP.
+* **V-02 (Distcc RCE):** Vector `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`. Allows unauthenticated remote command execution.  
+  * *Fix:* Implement compiler IP whitelisting (`--allow`) or disable the service.
+* **V-03 (Apache Slowloris DoS):** Vector `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H`. Exploits lack of timeout limits on partial headers.  
+  * *Fix:* Upgrade to Apache 2.4.x and enable `mod_reqtimeout`.
+* **V-04 (DNS Zone Transfer):** Vector `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`. Permits unauthorized zone replication.  
+  * *Fix:* Add `allow-transfer { none; };` inside BIND9 `named.conf.local`.
+
+### False Positive Analysis
+* **Finding:** OpenSSH 4.7p1 Command Injection (`CVE-2020-15778`).
+* **Evaluation:** **False Positive.** The target restricts SSH to key authentication without automated `scp` command execution pipelines. The banner-based detection does not translate into real-world exploitability in this environment.
+
+---
+
+## 6. Textual Risk Heat Map (Likelihood × Impact)
+
 ```text
-lab.local.        86400  IN  SOA   ns1.lab.local. admin.lab.local. 2026081501 28800 7200 604800 86400
-lab.local.        86400  IN  NS    ns1.lab.local.
-lab.local.        86400  IN  A     192.168.56.30
-lab.local.        86400  IN  MX    10 mail.lab.local.
-lab.local.        86400  IN  TXT   "v=spf1 mx -all"
-portal.lab.local. 86400  IN  CNAME app.lab.local.
+  HIGH IMPACT        │ [V-03] Slowloris DoS    │ [V-01] vsftpd Backdoor
+                     │                         │ [V-02] Distcc RCE
+  ───────────────────┼─────────────────────────┼────────────────────────────
+  LOW / MED IMPACT   │                         │ [V-04] DNS Zone Transfer
+                     │                         │
+  ───────────────────┴─────────────────────────┴────────────────────────────
+                       LOW / MEDIUM LIKELIHOOD   HIGH LIKELIHOOD
+```
+
+## 7. Remediation Priority List
+
+* **Priority 1 (CVSS 9.8 - Critical):** Upgrade vsftpd on `192.168.56.30:21`.
+* **Priority 2 (CVSS 9.8 - Critical):** Restrict or disable Distcc daemon on `192.168.56.30:3632`.
+* **Priority 3 (CVSS 7.5 - High):** Configure `mod_reqtimeout` on Apache HTTP (`192.168.56.30:80`).
+* **Priority 4 (CVSS 5.3 - Medium):** Restrict DNS Zone Transfers on `192.168.56.20:53`.
+
+                       
