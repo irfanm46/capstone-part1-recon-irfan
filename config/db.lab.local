@@ -1,0 +1,25 @@
+$TTL    86400
+@       IN      SOA     ns1.lab.local. admin.lab.local. (
+                        2026081501 ; Serial
+                        28800      ; Refresh
+                        7200       ; Retry
+                        604800     ; Expire
+                        86400 )    ; Negative Cache TTL
+
+; Name Servers
+@       IN      NS      ns1.lab.local.
+
+; Host Records (A Records)
+ns1     IN      A       192.168.56.20
+target  IN      A       192.168.56.30
+mail    IN      A       192.168.56.25
+app     IN      A       192.168.56.30
+
+; Alias Records (CNAME)
+portal  IN      CNAME   app.lab.local.
+
+; Mail Exchange (MX)
+@       IN      MX 10   mail.lab.local.
+
+; Text Records (TXT)
+@       IN      TXT     "v=spf1 mx -all"
