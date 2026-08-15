@@ -1,0 +1,38 @@
+============================================================
+DNS ENUMERATION & ZONE TRANSFER LOG
+============================================================
+
+1. Standard Query for All Records (ANY):
+Command: dig @192.168.56.20 lab.local ANY +noall +answer
+
+lab.local.        86400  IN  SOA   ns1.lab.local. admin.lab.local. 2026081501 28800 7200 604800 86400
+lab.local.        86400  IN  NS    ns1.lab.local.
+lab.local.        86400  IN  A     192.168.56.30
+lab.local.        86400  IN  MX    10 mail.lab.local.
+lab.local.        86400  IN  TXT   "v=spf1 mx -all"
+portal.lab.local. 86400  IN  CNAME app.lab.local.
+
+2. Full Zone Transfer (AXFR) Query:
+Command: dig axfr @192.168.56.20 lab.local
+
+; <<>> DiG 9.18.1-1-Debian <<>> axfr @192.168.56.20 lab.local
+; (1 server found)
+;; global options: +cmd
+lab.local.        86400  IN  SOA   ns1.lab.local. admin.lab.local. 2026081501 28800 7200 604800 86400
+lab.local.        86400  IN  NS    ns1.lab.local.
+app.lab.local.    86400  IN  A     192.168.56.30
+mail.lab.local.   86400  IN  A     192.168.56.25
+ns1.lab.local.    86400  IN  A     192.168.56.20
+portal.lab.local. 86400  IN  CNAME app.lab.local.
+target.lab.local. 86400  IN  A     192.168.56.30
+lab.local.        86400  IN  MX    10 mail.lab.local.
+lab.local.        86400  IN  TXT   "v=spf1 mx -all"
+lab.local.        86400  IN  SOA   ns1.lab.local. admin.lab.local. 2026081501 28800 7200 604800 86400
+;; Query time: 1 msec
+;; SERVER: 192.168.56.20#53(192.168.56.20)
+;; WHEN: Sat Aug 15 10:25:00 IST 2026
+;; XFR size: 10 records (messages 1, bytes 285)
+
+3. Reverse Pointer Lookup:
+Command: dig -x 192.168.56.30 @192.168.56.20 +short
+Output: vuln-target01.lab.local.
