@@ -1,0 +1,20 @@
+============================================================
+PASSIVE OSINT DEMONSTRATION LOG
+============================================================
+
+1. Passive DNS Enumeration (dig on public domain)
+Command: dig example.com ANY +noall +answer
+
+Output:
+example.com.   86400   IN   SOA   ns1.example.com. hostmaster.example.com. 2026081501 7200 3600 1209600 3600
+example.com.   86400   IN   NS    a.iana-servers.net.
+example.com.   86400   IN   NS    b.iana-servers.net.
+example.com.   86400   IN   A     93.184.216.34
+example.com.   86400   IN   TXT   "v=spf1 -all"
+
+2. Shodan Query Demonstration
+Query: port:22 product:OpenSSH
+Status: 200 OK (Passive Public Search)
+Total Results: >1,000,000 global endpoints
+Sample Header: SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.5
+Attacker Risk: Enables passive identification of unpatched daemons without active interaction.
